@@ -1,0 +1,3 @@
+/Users/meow/tiger/OpenGL-Learn/build/CMakeFiles/OpenGL-Learn.dir
+/Users/meow/tiger/OpenGL-Learn/build/CMakeFiles/edit_cache.dir
+/Users/meow/tiger/OpenGL-Learn/build/CMakeFiles/rebuild_cache.dir

@@ -1,0 +1,14 @@
+[
+{
+  "directory": "/Users/meow/tiger/OpenGL-Learn/build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I/usr/local/include -isystem /opt/homebrew/include -iframework /Library/Developer/CommandLineTools/SDKs/MacOSX15.2.sdk/System/Library/Frameworks  -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.2.sdk -mmacosx-version-min=15.1 -o CMakeFiles/OpenGL-Learn.dir/src/window.cpp.o -c /Users/meow/tiger/OpenGL-Learn/src/window.cpp",
+  "file": "/Users/meow/tiger/OpenGL-Learn/src/window.cpp",
+  "output": "CMakeFiles/OpenGL-Learn.dir/src/window.cpp.o"
+},
+{
+  "directory": "/Users/meow/tiger/OpenGL-Learn/build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/cc  -I/usr/local/include -isystem /opt/homebrew/include -iframework /Library/Developer/CommandLineTools/SDKs/MacOSX15.2.sdk/System/Library/Frameworks  -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.2.sdk -mmacosx-version-min=15.1 -o CMakeFiles/OpenGL-Learn.dir/usr/local/src/glad.c.o -c /usr/local/src/glad.c",
+  "file": "/usr/local/src/glad.c",
+  "output": "CMakeFiles/OpenGL-Learn.dir/usr/local/src/glad.c.o"
+}
+]
