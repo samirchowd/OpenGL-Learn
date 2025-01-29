@@ -24,3 +24,6 @@ add_executable(${PROJECT_NAME} ${SOURCES})
 # Link GLFW and OpenGL to your project
 find_package(OpenGL REQUIRED)
 target_link_libraries(${PROJECT_NAME} glfw OpenGL::GL)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
