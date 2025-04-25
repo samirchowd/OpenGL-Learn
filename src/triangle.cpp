@@ -174,6 +174,7 @@ int main() {
     glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, NULL);
 
     GLvoid *offset = (GLvoid *)(3 * sizeof(unsigned int));
+
     glUseProgram(shaderProgramYellow);
     glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, offset);
 

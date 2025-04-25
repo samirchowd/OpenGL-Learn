@@ -19,7 +19,7 @@ XcursorDep = dependency('Xcursor', required: false)
 
 
 
-inc = include_directories('/usr/local/include')
-executable('OpenGL-Learn', sources: ['src/triangle.cpp','/usr/local/src/glad.c'],
+inc = include_directories('/usr/local/include', 'include')
+executable('OpenGL-Learn', sources: ['src/shader.cpp', 'src/triangle.cpp','/usr/local/src/glad.c'],
           include_directories : inc,
           dependencies: [openGLDep, glfwDep,])
