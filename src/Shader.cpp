@@ -4,34 +4,41 @@
 #include <sstream>
 #include <string>
 
-Shader::Shader(const char *vertexPath, const char *fragmentPath) {
-  std::string vertexCode;
-  std::string fragmentCode;
-  std::ifstream vShaderFile;
-  std::ifstream fShaderFile;
+std::string readShaderFile(const char *filePath) {
+  std::string shaderCode;
+  std::ifstream shaderFile;
 
-  // ensure ifstream objects can throw exceptions
-  vShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-  fShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+  // Ensure ifstream objects can throw exceptions:
+  shaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+
   try {
-    // open files
-    vShaderFile.open(vertexPath);
-    fShaderFile.open(fragmentPath);
-    std::stringstream vShaderStream, fShaderStream;
-    // read file's buffer contents into streams
-    vShaderStream << vShaderFile.rdbuf();
-    fShaderStream << fShaderFile.rdbuf();
-    // close file handlers
-    vShaderFile.close();
-    fShaderFile.close();
-    // convert stream into string
-    vertexCode = vShaderStream.str();
-    fragmentCode = fShaderStream.str();
-  } catch (std::ifstream::failure e) {
-    std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
+    // Open files
+    shaderFile.open(filePath);
+    std::stringstream shaderStream;
+
+    // Read file's buffer contents into stream
+    shaderStream << shaderFile.rdbuf();
+
+    // Close file handlers
+    shaderFile.close();
+
+    // Convert stream into string
+    shaderCode = shaderStream.str();
+  } catch (std::ifstream::failure &e) {
+    std::cerr << "ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ: " << e.what()
+              << std::endl;
   }
-  const char *vShaderCode = vertexCode.c_str();
-  const char *fShaderCode = fragmentCode.c_str();
+  return shaderCode;
+}
+
+Shader::Shader(const char *vertexPath, const char *fragmentPath) {
+  std::string vertexSource = readShaderFile(vertexPath);
+  std::string fragmentSource = readShaderFile(fragmentPath);
+
+  std::cout << vertexSource << std::endl;
+
+  const char *vShaderCode = vertexSource.c_str();
+  const char *fShaderCode = fragmentSource.c_str();
 
   unsigned int vertex, fragment;
   int success;
@@ -87,4 +94,8 @@ void Shader::setInt(const std::string &name, int value) const {
 
 void Shader::setFloat(const std::string &name, float value) const {
   glUniform1f(glGetUniformLocation(this->ID, name.c_str()), value);
+}
+
+void Shader::setVec3(const std::string &name, float x, float y, float z) const {
+  glUniform3f(glGetUniformLocation(this->ID, name.c_str()), x, y, z);
 }
