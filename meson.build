@@ -8,6 +8,7 @@ glewDep = dependency('glew', required: false)
 gluLDep = dependency('glu', required: false)
 glutDep = dependency('glut', required: false)
 glfwDep = dependency('glfw3', required: false)
+glmDep = dependency('glm', required: false)
 threadDep = dependency('threads', required: false)
 XrandrDep = dependency('Xrandr', required: false)
 XiDep = dependency('Xi', required: false)
@@ -30,6 +31,6 @@ copy_shaders = custom_target('copy_shaders',
   build_by_default: true
 )
 
-executable('OpenGL-Learn', sources: ['src/shader.cpp', 'src/main.cpp','/usr/local/src/glad.c'],
+executable('OpenGL-Learn', sources: ['src/Shader.cpp', 'src/VertexBuffer.cpp', 'src/ElementBuffer.cpp', 'src/Texture.cpp', 'src/main.cpp', '/usr/local/src/glad.c'],
           include_directories : inc,
-          dependencies: [openGLDep, glfwDep,])
+          dependencies: [openGLDep, glfwDep, glmDep])

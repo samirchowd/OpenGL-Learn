@@ -1,14 +1,10 @@
-#ifndef GLAD_LOADER_INCLUDED
-#define GLAD_LOADER_INCLUDED
 #include "Shader.h"
+#include "VertexBuffer.h"
+#include "ElementBuffer.h"
+#include "Texture.h"
 #include <glad/glad.h>
-#endif
-
 #include <GLFW/glfw3.h>
 #include <iostream>
-
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void processInput(GLFWwindow *window, Shader &shader);
@@ -51,59 +47,14 @@ int main() {
     return -1;
   }
 
-  stbi_set_flip_vertically_on_load(true);
-
-  // Create 1st Texture
-  unsigned int tex1;
-  glGenTextures(1, &tex1);
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, tex1);
-
-  // set the texture wrapping/filtering options (on the currently bound texture
-  // object)
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-                  GL_LINEAR_MIPMAP_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  // load and generate the texture
-  int width, height, nrChannels;
-  stbi_set_flip_vertically_on_load(true);
-
-  unsigned char *data =
-      stbi_load("../textures/container.jpg", &width, &height, &nrChannels, 0);
-  if (data) {
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,
-                 GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
-  } else {
-    std::cout << "Failed to load texture" << std::endl;
-  }
-  stbi_image_free(data);
-
-  // Create 2nd Texture
-  unsigned int tex2;
-  glActiveTexture(GL_TEXTURE1);
-  glGenTextures(1, &tex2);
-  glBindTexture(GL_TEXTURE_2D, tex2);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-                  GL_LINEAR_MIPMAP_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-  // load and generate the texture
-
-  data =
-      stbi_load("../textures/awesomeface.png", &width, &height, &nrChannels, 0);
-  if (data) {
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
-                 GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
-  } else {
-    std::cout << "Failed to load texture" << std::endl;
-  }
-  stbi_image_free(data);
+  // Create textures
+  Texture texture1("../textures/container.jpg", GL_RGB);
+  texture1.setParameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+  texture1.setParameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  
+  Texture texture2("../textures/awesomeface.png", GL_RGBA);
+  texture2.setParameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+  texture2.setParameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
   Shader ourShader("shaders/4.1.shader.glsl", "shaders/4.1.fragment.glsl");
 
@@ -120,19 +71,13 @@ int main() {
       0, 1, 3, // first triangle
       1, 2, 3  // second triangle
   };
-  unsigned int VBO, VAO, EBO;
+  // Create vertex array object and buffers
+  unsigned int VAO;
   glGenVertexArrays(1, &VAO);
-  glGenBuffers(1, &VBO);
-  glGenBuffers(1, &EBO);
-
   glBindVertexArray(VAO);
 
-  glBindBuffer(GL_ARRAY_BUFFER, VBO);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices,
-               GL_STATIC_DRAW);
+  VertexBuffer vbo(vertices, sizeof(vertices));
+  ElementBuffer ebo(indices, 6);
 
   // position attribute
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)0);
@@ -157,9 +102,11 @@ int main() {
     glClear(GL_COLOR_BUFFER_BIT);
 
     // render container
+    texture1.bind(0);
+    texture2.bind(1);
     ourShader.use();
     glBindVertexArray(VAO);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, ebo.getCount(), GL_UNSIGNED_INT, 0);
 
     glfwSwapBuffers(window);
     glfwPollEvents();
@@ -191,7 +138,7 @@ void processInput(GLFWwindow *window, Shader &shader) {
 // glfw: whenever the window size changed (by OS or user resize) this callback
 // function executes
 // ---------------------------------------------------------------------------------------------
-void framebuffer_size_callback(GLFWwindow *window, int width, int height) {
+void framebuffer_size_callback(GLFWwindow *, int width, int height) {
   // make sure the viewport matches the new window dimensions; note that width
   // and height will be significantly larger than specified on retina displays.
   glViewport(0, 0, width, height);
