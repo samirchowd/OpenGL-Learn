@@ -35,8 +35,6 @@ Shader::Shader(const char *vertexPath, const char *fragmentPath) {
   std::string vertexSource = readShaderFile(vertexPath);
   std::string fragmentSource = readShaderFile(fragmentPath);
 
-  std::cout << vertexSource << std::endl;
-
   const char *vShaderCode = vertexSource.c_str();
   const char *fShaderCode = fragmentSource.c_str();
 

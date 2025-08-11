@@ -20,6 +20,16 @@ XcursorDep = dependency('Xcursor', required: false)
 
 
 inc = include_directories('/usr/local/include', 'include')
+
+# Copy shader files as a build target
+shader_files = files('shaders/4.1.shader.glsl', 'shaders/4.1.fragment.glsl')
+copy_shaders = custom_target('copy_shaders',
+  input: shader_files,
+  output: ['shaders'],
+  command: ['cp', '-r', meson.current_source_dir() + '/shaders', meson.current_build_dir()],
+  build_by_default: true
+)
+
 executable('OpenGL-Learn', sources: ['src/shader.cpp', 'src/main.cpp','/usr/local/src/glad.c'],
           include_directories : inc,
           dependencies: [openGLDep, glfwDep,])
