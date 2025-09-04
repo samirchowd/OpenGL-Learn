@@ -1,3 +1,4 @@
+#include "Camera.h"
 #include "ElementBuffer.h"
 #include "Shader.h"
 #include "Texture.h"
@@ -11,14 +12,21 @@
 #include <iostream>
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
-void processInput(GLFWwindow *window, Shader &shader);
+void processInput(GLFWwindow *window, Shader &shader, Camera &camera, float deltaTime);
+void mouse_callback(GLFWwindow *window, double xpos, double ypos);
+void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 
 // settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
+float lastX = 400, lastY = 300;
+bool firstMouse = true;
 
 // Global blend factor
 float blendFactor = 0.2f;
+
+// Camera
+Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 
 int main() {
   // glfw: initialize and configure
@@ -43,6 +51,9 @@ int main() {
   }
   glfwMakeContextCurrent(window);
   glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+  glfwSetCursorPosCallback(window, mouse_callback);
+  glfwSetScrollCallback(window, scroll_callback);
 
   // glad: load all OpenGL function pointers
   // ---------------------------------------
@@ -123,18 +134,15 @@ int main() {
   GLuint viewLoc = glGetUniformLocation(ourShader.getID(), "view");
   GLuint modelLoc = glGetUniformLocation(ourShader.getID(), "model");
 
-  glm::mat4 projection =
-      glm::perspective(glm::radians(50.0f), 800.0f / 600.0f, 0.1f, 100.0f);
-  glm::mat4 view = glm::mat4(1.0f);
-  // note that we're translating the scene in the reverse direction of where we
-  // want to move
-  view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-
-  glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
-  glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+  float deltaTime = 0.0f;
+  float lastFrame = 0.0f;
 
   while (!glfwWindowShouldClose(window)) {
-    processInput(window, ourShader);
+    float currentFrame = (float)glfwGetTime();
+    deltaTime = currentFrame - lastFrame;
+    lastFrame = currentFrame;
+
+    processInput(window, ourShader, camera, deltaTime);
 
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -146,6 +154,14 @@ int main() {
     glBindVertexArray(VAO);
 
     float time = (float)glfwGetTime();
+
+    // Update view matrix with camera
+    glm::mat4 view = camera.GetViewMatrix();
+    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+    
+    // Update projection matrix with camera zoom
+    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), 800.0f / 600.0f, 0.1f, 100.0f);
+    glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
     for (unsigned int i = 0; i < 10; i++) {
       glm::mat4 model = glm::mat4(1.0f);
@@ -172,12 +188,20 @@ int main() {
   return 0;
 }
 
-// process all input: query GLFW whether relevant keys are pressed/released this
-// frame and react accordingly
-// ---------------------------------------------------------------------------------------------------------
-void processInput(GLFWwindow *window, Shader &shader) {
+
+void processInput(GLFWwindow *window, Shader &shader, Camera &camera, float deltaTime) {
   if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
     glfwSetWindowShouldClose(window, true);
+
+  // Camera movement
+  if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+    camera.ProcessKeyboard(FORWARD, deltaTime);
+  if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+    camera.ProcessKeyboard(BACKWARD, deltaTime);
+  if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+    camera.ProcessKeyboard(LEFT, deltaTime);
+  if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+    camera.ProcessKeyboard(RIGHT, deltaTime);
 
   // UP key - increase blend factor
   if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
@@ -192,6 +216,24 @@ void processInput(GLFWwindow *window, Shader &shader) {
   }
 }
 
+void mouse_callback(GLFWwindow *window, double xpos, double ypos) {
+  if (firstMouse) {
+    lastX = xpos;
+    lastY = ypos;
+    firstMouse = false;
+  }
+
+  float xoffset = xpos - lastX;
+  float yoffset = lastY - ypos;
+  lastX = xpos;
+  lastY = ypos;
+
+  camera.ProcessMouseMovement(xoffset, yoffset);
+}
+
+void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
+  camera.ProcessMouseScroll(yoffset);
+}
 // glfw: whenever the window size changed (by OS or user resize) this callback
 // function executes
 // ---------------------------------------------------------------------------------------------

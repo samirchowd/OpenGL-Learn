@@ -31,6 +31,6 @@ copy_shaders = custom_target('copy_shaders',
   build_by_default: true
 )
 
-executable('OpenGL-Learn', sources: ['src/Shader.cpp', 'src/VertexBuffer.cpp', 'src/ElementBuffer.cpp', 'src/Texture.cpp', 'src/main.cpp', '/usr/local/src/glad.c'],
+executable('OpenGL-Learn', sources: ['src/Shader.cpp', 'src/VertexBuffer.cpp', 'src/ElementBuffer.cpp', 'src/Texture.cpp', 'src/Camera.cpp', 'src/main.cpp', '/usr/local/src/glad.c'],
           include_directories : inc,
           dependencies: [openGLDep, glfwDep, glmDep])
