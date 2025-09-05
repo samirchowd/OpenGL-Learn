@@ -22,12 +22,13 @@ XcursorDep = dependency('Xcursor', required: false)
 
 inc = include_directories('/usr/local/include', 'include')
 
-# Copy shader files as a build target
-shader_files = files('shaders/4.1.shader.glsl', 'shaders/4.1.fragment.glsl')
+# Copy all shader files on every build
+shader_sources = run_command('find', meson.current_source_dir() + '/shaders', '-name', '*.glsl', '-type', 'f', check: true)
 copy_shaders = custom_target('copy_shaders',
-  input: shader_files,
+  input: files(shader_sources.stdout().strip().split('\n')),
   output: ['shaders'],
   command: ['cp', '-r', meson.current_source_dir() + '/shaders', meson.current_build_dir()],
+  build_always_stale: true,
   build_by_default: true
 )
 
