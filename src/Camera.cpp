@@ -21,9 +21,19 @@ Camera::Camera(float posX, float posY, float posZ, float upX, float upY, float u
     updateCameraVectors();
 }
 
-glm::mat4 Camera::GetViewMatrix()
+glm::mat4 Camera::GetViewMatrix() const
 {
     return glm::lookAt(Position, Position + Front, Up);
+}
+
+glm::mat4 Camera::GetProjectionMatrix(float aspectRatio, float nearPlane, float farPlane) const
+{
+    return glm::perspective(glm::radians(Zoom), aspectRatio, nearPlane, farPlane);
+}
+
+glm::mat4 Camera::GetViewProjectionMatrix(float aspectRatio, float nearPlane, float farPlane) const
+{
+    return GetProjectionMatrix(aspectRatio, nearPlane, farPlane) * GetViewMatrix();
 }
 
 void Camera::ProcessKeyboard(Camera_Movement direction, float deltaTime)

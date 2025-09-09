@@ -1,4 +1,5 @@
 #include "Shader.h"
+#include "Camera.h"
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -128,7 +129,21 @@ void Shader::setVec3(const std::string &name, float x, float y, float z) const {
   glUniform3f(getUniformLocation(name), x, y, z);
 }
 
+void Shader::setVec3(const std::string &name, const glm::vec3& value) const {
+  glUniform3fv(getUniformLocation(name), 1, &value[0]);
+}
+
 void Shader::setVec4(const std::string &name, float x, float y, float z,
                      float w) const {
   glUniform4f(getUniformLocation(name), x, y, z, w);
+}
+
+void Shader::setMat4(const std::string &name, const glm::mat4& mat) const {
+  glUniformMatrix4fv(getUniformLocation(name), 1, GL_FALSE, &mat[0][0]);
+}
+
+void Shader::setCameraUniforms(const std::string& viewName, const std::string& projectionName, 
+                               const Camera& camera, float aspectRatio) const {
+  setMat4(viewName, camera.GetViewMatrix());
+  setMat4(projectionName, camera.GetProjectionMatrix(aspectRatio));
 }
