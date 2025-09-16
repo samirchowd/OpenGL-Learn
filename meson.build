@@ -32,6 +32,15 @@ copy_shaders = custom_target('copy_shaders',
   build_by_default: true
 )
 
+# Copy materials.json file on every build
+copy_materials = custom_target('copy_materials',
+  input: files('materials.json'),
+  output: ['materials.json'],
+  command: ['cp', meson.current_source_dir() + '/materials.json', meson.current_build_dir()],
+  build_always_stale: true,
+  build_by_default: true
+)
+
 executable('OpenGL-Learn', sources: ['src/Shader.cpp', 'src/VertexBuffer.cpp', 'src/ElementBuffer.cpp', 'src/Texture.cpp', 'src/Camera.cpp', 'src/main.cpp', '/usr/local/src/glad.c'],
           include_directories : inc,
           dependencies: [openGLDep, glfwDep, glmDep])
