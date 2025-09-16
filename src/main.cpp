@@ -26,6 +26,8 @@ const unsigned int SCR_HEIGHT = 600;
 float lastX = 400, lastY = 300;
 bool firstMouse = true;
 
+// Global blend factor
+float blendFactor = 0.2f;
 
 // Camera
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
@@ -143,6 +145,15 @@ int main() {
   float lastFrame = 0.0f;
   glm::vec3 lightStart(1.2f, 1.0f, 2.0f);
 
+  GLuint objectModelLoc = glGetUniformLocation(objectShader.getID(), "model");
+  GLuint objectViewLoc = glGetUniformLocation(objectShader.getID(), "view");
+  GLuint objectProjLoc = glGetUniformLocation(objectShader.getID(), "projection");
+
+  GLuint lightModelLoc = glGetUniformLocation(lightShader.getID(), "model");
+  GLuint lightViewLoc = glGetUniformLocation(lightShader.getID(), "view");
+  GLuint lightProjLoc = glGetUniformLocation(lightShader.getID(), "projection");
+
+  // Set light Position
 
   while (!glfwWindowShouldClose(window)) {
     float currentFrame = (float)glfwGetTime();
@@ -151,23 +162,26 @@ int main() {
 
     processInput(window, objectShader, camera, deltaTime);
 
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    float radius = 2.0f;
-    glm::vec3 lightPos = glm::vec3(radius * cos(currentFrame), lightStart.y, radius * sin(currentFrame));
+    float time = (float)glfwGetTime();
+    float radius = sqrt(lightStart.x * lightStart.x + lightStart.z * lightStart.z);
+    glm::vec3 lightPos = glm::vec3(radius * cos(time), lightStart.y, radius * sin(time));
 
     // 1. Render the object (orange cube)
     objectShader.use();
     glBindVertexArray(objectVao);
 
-    const float aspectRatio = (float)SCR_WIDTH / (float)SCR_HEIGHT;
     glm::mat4 model = glm::mat4(1.0f);
+    glm::mat4 view = camera.GetViewMatrix();
+    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), 800.0f / 600.0f, 0.1f, 100.0f);
 
-    objectShader.setMat4("model", model);
-    objectShader.setCameraUniforms("view", "projection", camera, aspectRatio);
-    objectShader.setVec3("lightPos", lightPos);
-    objectShader.setVec3("viewPos", camera.Position);
+    glUniformMatrix4fv(objectModelLoc, 1, GL_FALSE, glm::value_ptr(model));
+    glUniformMatrix4fv(objectViewLoc, 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(objectProjLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+    objectShader.setVec3("lightPos", lightPos.x, lightPos.y, lightPos.z);
+    objectShader.setVec3("viewPos", camera.Position.x, camera.Position.y, camera.Position.z);
 
     glDrawArrays(GL_TRIANGLES, 0, 36);
 
@@ -179,8 +193,9 @@ int main() {
     model = glm::translate(model, lightPos);
     model = glm::scale(model, glm::vec3(0.2f)); // Make it smaller
 
-    lightShader.setMat4("model", model);
-    lightShader.setCameraUniforms("view", "projection", camera, aspectRatio);
+    glUniformMatrix4fv(lightModelLoc, 1, GL_FALSE, glm::value_ptr(model));
+    glUniformMatrix4fv(lightViewLoc, 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(lightProjLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
     glDrawArrays(GL_TRIANGLES, 0, 36);
 
@@ -193,7 +208,6 @@ int main() {
 
 void processInput(GLFWwindow *window, Shader &shader, Camera &camera,
                   float deltaTime) {
-  (void)shader; // Suppress unused parameter warning
   if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
     glfwSetWindowShouldClose(window, true);
 
@@ -207,10 +221,20 @@ void processInput(GLFWwindow *window, Shader &shader, Camera &camera,
   if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
     camera.ProcessKeyboard(RIGHT, deltaTime);
 
+  // UP key - increase blend factor
+  if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+    blendFactor = std::min(1.0f, blendFactor + 0.005f);
+    shader.setFloat("blendFactor", blendFactor);
+  }
+
+  // DOWN key - decrease blend factor
+  if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+    blendFactor = std::max(0.0f, blendFactor - 0.005f);
+    shader.setFloat("blendFactor", blendFactor);
+  }
 }
 
 void mouse_callback(GLFWwindow *window, double xpos, double ypos) {
-  (void)window; // Suppress unused parameter warning
   if (firstMouse) {
     lastX = xpos;
     lastY = ypos;
@@ -226,8 +250,6 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos) {
 }
 
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
-  (void)window;  // Suppress unused parameter warning
-  (void)xoffset; // Suppress unused parameter warning
   camera.ProcessMouseScroll(yoffset);
 }
 // glfw: whenever the window size changed (by OS or user resize) this callback
