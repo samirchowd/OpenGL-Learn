@@ -1,12 +1,11 @@
 #include "Camera.h"
-#include "ElementBuffer.h"
 #include "Shader.h"
 #include "Texture.h"
 #include "VertexBuffer.h"
 #include "glm/ext/matrix_transform.hpp"
 #include "glm/fwd.hpp"
 #include <GLFW/glfw3.h>
-#include <cmath>
+#include <format>
 #include <fstream>
 #include <glad/glad.h>
 #include <glm/glm.hpp>
@@ -36,9 +35,9 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 
 // settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
-float lastX = 400, lastY = 300;
+const unsigned int SCR_WIDTH = 1920;
+const unsigned int SCR_HEIGHT = 1080;
+float lastX = SCR_WIDTH / 2.0f, lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
 
 // Global blend factor
@@ -54,6 +53,26 @@ int currentMaterialIndex = 0;
 
 // Light animation toggle
 bool animateLight = false;
+
+// Cube positions
+glm::vec3 cubePositions[] = {
+    glm::vec3(0.0f, 0.0f, 0.0f),
+    glm::vec3(2.0f, 5.0f, -15.0f),
+    glm::vec3(-1.5f, -2.2f, -2.5f),
+    glm::vec3(-3.8f, -2.0f, -12.3f),
+    glm::vec3(2.4f, -0.4f, -3.5f),
+    glm::vec3(-1.7f, 3.0f, -7.5f),
+    glm::vec3(1.3f, -2.0f, -2.5f),
+    glm::vec3(1.5f, 2.0f, -2.5f),
+    glm::vec3(1.5f, 0.2f, -1.5f),
+    glm::vec3(-1.3f, 1.0f, -1.5f)};
+
+// Light Positions
+glm::vec3 pointLightPositions[] = {
+    glm::vec3(0.7f, 0.2f, 2.0f),
+    glm::vec3(2.3f, -3.3f, -4.0f),
+    glm::vec3(-4.0f, 2.0f, -12.0f),
+    glm::vec3(0.0f, 0.0f, -3.0f)};
 
 int main() {
   // glfw: initialize and configure
@@ -91,16 +110,16 @@ int main() {
 
   glEnable(GL_DEPTH_TEST);
 
-  // Load materials from JSON
-  materials = loadMaterials("materials.json");
-  for (const auto &pair : materials) {
-    materialNames.push_back(pair.first);
-  }
-  if (materialNames.empty()) {
-    std::cout << "No materials loaded, using default gold material" << std::endl;
-  } else {
-    std::cout << "Loaded " << materialNames.size() << " materials" << std::endl;
-  }
+  // Load materials from JSON - DISABLED for texture work
+  // materials = loadMaterials("materials.json");
+  // for (const auto &pair : materials) {
+  //   materialNames.push_back(pair.first);
+  // }
+  // if (materialNames.empty()) {
+  //   std::cout << "No materials loaded, using default gold material" << std::endl;
+  // } else {
+  //   std::cout << "Loaded " << materialNames.size() << " materials" << std::endl;
+  // }
 
   float vertices[] = {
       // positions          // normals           // texture coords
@@ -158,47 +177,40 @@ int main() {
   VertexBuffer vbo(vertices, sizeof(vertices));
 
   // position attribute
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void *)0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)0);
   glEnableVertexAttribArray(0);
 
   glBindVertexArray(objectVao);
   vbo.bind();
 
   // position attribute
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void *)0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)0);
   glEnableVertexAttribArray(0);
   // normal attribute
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void *)(3 * sizeof(float)));
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(3 * sizeof(float)));
   glEnableVertexAttribArray(1);
   // texcoord attribute
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void *)(6 * sizeof(float)));
+  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(6 * sizeof(float)));
   glEnableVertexAttribArray(2);
 
   objectShader.use();
   objectShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
 
-  // Set initial material
-  if (!materialNames.empty()) {
-    setMaterial(objectShader, materials[materialNames[currentMaterialIndex]]);
-    std::cout << "Starting with material: " << materialNames[currentMaterialIndex] << std::endl;
-    std::cout << "Controls:" << std::endl;
-    std::cout << "  M/N - Cycle through materials" << std::endl;
-    std::cout << "  L   - Toggle animated light colors" << std::endl;
+  std::cout << "Material system disabled - using texture-based materials" << std::endl;
 
-    // Print current material properties for debugging
-    auto &mat = materials[materialNames[currentMaterialIndex]];
-    std::cout << "Ambient: " << mat.ambient.x << ", " << mat.ambient.y << ", " << mat.ambient.z << std::endl;
-    std::cout << "Diffuse: " << mat.diffuse.x << ", " << mat.diffuse.y << ", " << mat.diffuse.z << std::endl;
-  } else {
-    std::cout << "No materials loaded, using fallback gold" << std::endl;
-    Material gold = {{0.24725f, 0.1995f, 0.0745f}, {0.75164f, 0.60648f, 0.22648f}, {0.628281f, 0.555802f, 0.366065f}, 0.4f};
-    setMaterial(objectShader, gold);
-  }
+  // Load container texture
+  Texture diffuseMap("textures/container2.png");
+  Texture specularMap("textures/container2_specular.png");
 
-  // Set all light intensities to full white for accurate material representation
-  objectShader.setVec3("light.ambient", 1.0f, 1.0f, 1.0f);
-  objectShader.setVec3("light.diffuse", 1.0f, 1.0f, 1.0f);
-  objectShader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+  // Set texture uniform and material properties
+  objectShader.setInt("material.diffuse", 0);
+  objectShader.setInt("material.specular", 1);
+  objectShader.setFloat("material.shininess", 64.0f); // Higher shininess for more visible specular
+
+  // Set light intensities - boosted specular for more visible effect
+  objectShader.setVec3("light.ambient", 0.2f, 0.2f, 0.2f);
+  objectShader.setVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
+  objectShader.setVec3("light.specular", 1.0f, 1.0f, 1.0f); // Stronger specular
 
   float deltaTime = 0.0f;
   float lastFrame = 0.0f;
@@ -212,7 +224,22 @@ int main() {
   GLuint lightViewLoc = glGetUniformLocation(lightShader.getID(), "view");
   GLuint lightProjLoc = glGetUniformLocation(lightShader.getID(), "projection");
 
-  // Set light Position
+  // Set up point lights
+  for (int i = 0; i < 4; i++) {
+    objectShader.setVec3(std::format("pointLights[{}].position", i), pointLightPositions[i]);
+    objectShader.setVec3(std::format("pointLights[{}].ambient", i), 0.2f, 0.2f, 0.2f);
+    objectShader.setVec3(std::format("pointLights[{}].diffuse", i), 0.5f, 0.5f, 0.5f);
+    objectShader.setVec3(std::format("pointLights[{}].specular", i), 1.0f, 1.0f, 1.0f);
+    objectShader.setFloat(std::format("pointLights[{}].constant", i), 1.0f);
+    objectShader.setFloat(std::format("pointLights[{}].linear", i), 0.09f);
+    objectShader.setFloat(std::format("pointLights[{}].quadratic", i), 0.032f);
+  }
+
+  // Set up dir lights
+  objectShader.setVec3("dirLight.direction", -0.2f, -1.0f, -0.3f);
+  objectShader.setVec3("dirLight.ambient", 0.05f, 0.05f, 0.05f);
+  objectShader.setVec3("dirLight.diffuse", 0.075f, 0.075f, 0.075f);
+  objectShader.setVec3("dirLight.specular", 0.1f, 0.1f, 0.1f);
 
   while (!glfwWindowShouldClose(window)) {
     float currentFrame = (float)glfwGetTime();
@@ -223,47 +250,50 @@ int main() {
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    float time = (float)glfwGetTime();
-    glm::vec3 lightPos;
-    if (animateLight) {
-      // Spinning light position
-      float radius = sqrt(lightStart.x * lightStart.x + lightStart.z * lightStart.z);
-      lightPos = glm::vec3(radius * cos(time), lightStart.y, radius * sin(time));
-    } else {
-      // Static light position
-      lightPos = lightStart;
-    }
+    glm::vec3 lightPos = lightStart;
 
-    // 1. Render the object (orange cube)
+    // 1. Render the objects (multiple cubes)
     objectShader.use();
     glBindVertexArray(objectVao);
 
-    glm::mat4 model = glm::mat4(1.0f);
-    glm::mat4 view = camera.GetViewMatrix();
-    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), 800.0f / 600.0f, 0.1f, 100.0f);
+    // Bind textures
+    diffuseMap.bind(0);
+    specularMap.bind(1);
 
-    glUniformMatrix4fv(objectModelLoc, 1, GL_FALSE, glm::value_ptr(model));
+    glm::mat4 view = camera.GetViewMatrix();
+    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+
     glUniformMatrix4fv(objectViewLoc, 1, GL_FALSE, glm::value_ptr(view));
     glUniformMatrix4fv(objectProjLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
-    objectShader.setVec3("lightPos", lightPos.x, lightPos.y, lightPos.z);
+    // Set directional light (like sunlight coming from above-right)
     objectShader.setVec3("viewPos", camera.Position.x, camera.Position.y, camera.Position.z);
 
-    glDrawArrays(GL_TRIANGLES, 0, 36);
+    // Render multiple cubes
+    for (unsigned int i = 0; i < 10; i++) {
+      glm::mat4 model = glm::mat4(1.0f);
+      model = glm::translate(model, cubePositions[i]);
+      float angle = 20.0f * i;
+      model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+      glUniformMatrix4fv(objectModelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
+      glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
     // 2. Render the light source (white cube at lightPos)
     lightShader.use();
     glBindVertexArray(lightVao);
 
-    model = glm::mat4(1.0f);
-    model = glm::translate(model, lightPos);
-    model = glm::scale(model, glm::vec3(0.2f)); // Make it smaller
+    for (unsigned int i = 0; i < 4; i++) {
+      glm::mat4 lightModel = glm::mat4(1.0f);
+      lightModel = glm::translate(lightModel, pointLightPositions[i]);
+      lightModel = glm::scale(lightModel, glm::vec3(0.2f)); // Make it smaller
 
-    glUniformMatrix4fv(lightModelLoc, 1, GL_FALSE, glm::value_ptr(model));
-    glUniformMatrix4fv(lightViewLoc, 1, GL_FALSE, glm::value_ptr(view));
-    glUniformMatrix4fv(lightProjLoc, 1, GL_FALSE, glm::value_ptr(projection));
+      glUniformMatrix4fv(lightModelLoc, 1, GL_FALSE, glm::value_ptr(lightModel));
+      glUniformMatrix4fv(lightViewLoc, 1, GL_FALSE, glm::value_ptr(view));
+      glUniformMatrix4fv(lightProjLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
-    glDrawArrays(GL_TRIANGLES, 0, 36);
+      glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
 
     glfwSwapBuffers(window);
     glfwPollEvents();
@@ -291,26 +321,26 @@ void processInput(GLFWwindow *window, Shader &shader, Camera &camera,
   if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
     camera.ProcessKeyboard(RIGHT, deltaTime);
 
-  // Material cycling with M/N keys
-  if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS && !mKeyPressed && !materialNames.empty()) {
-    mKeyPressed = true;
-    currentMaterialIndex = (currentMaterialIndex + 1) % materialNames.size();
-    setMaterial(shader, materials[materialNames[currentMaterialIndex]]);
-    std::cout << "Material: " << materialNames[currentMaterialIndex] << std::endl;
-  }
-  if (glfwGetKey(window, GLFW_KEY_M) == GLFW_RELEASE) {
-    mKeyPressed = false;
-  }
-
-  if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS && !nKeyPressed && !materialNames.empty()) {
-    nKeyPressed = true;
-    currentMaterialIndex = (currentMaterialIndex - 1 + materialNames.size()) % materialNames.size();
-    setMaterial(shader, materials[materialNames[currentMaterialIndex]]);
-    std::cout << "Material: " << materialNames[currentMaterialIndex] << std::endl;
-  }
-  if (glfwGetKey(window, GLFW_KEY_N) == GLFW_RELEASE) {
-    nKeyPressed = false;
-  }
+  // Material cycling with M/N keys - DISABLED
+  // if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS && !mKeyPressed && !materialNames.empty()) {
+  //   mKeyPressed = true;
+  //   currentMaterialIndex = (currentMaterialIndex + 1) % materialNames.size();
+  //   setMaterial(shader, materials[materialNames[currentMaterialIndex]]);
+  //   std::cout << "Material: " << materialNames[currentMaterialIndex] << std::endl;
+  // }
+  // if (glfwGetKey(window, GLFW_KEY_M) == GLFW_RELEASE) {
+  //   mKeyPressed = false;
+  // }
+  //
+  // if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS && !nKeyPressed && !materialNames.empty()) {
+  //   nKeyPressed = true;
+  //   currentMaterialIndex = (currentMaterialIndex - 1 + materialNames.size()) % materialNames.size();
+  //   setMaterial(shader, materials[materialNames[currentMaterialIndex]]);
+  //   std::cout << "Material: " << materialNames[currentMaterialIndex] << std::endl;
+  // }
+  // if (glfwGetKey(window, GLFW_KEY_N) == GLFW_RELEASE) {
+  //   nKeyPressed = false;
+  // }
 
   // Light animation toggle with L key
   if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS && !lKeyPressed) {
