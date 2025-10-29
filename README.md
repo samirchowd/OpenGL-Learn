@@ -4,7 +4,7 @@ A modern C++20 OpenGL learning project demonstrating 3D graphics rendering techn
 
 ## Demo
 
-![Demo Video](./assets/learn-open-gl.mov)
+[![Demo Video](https://img.youtube.com/vi/CouqI4UXPQo/maxresdefault.jpg)](https://youtu.be/CouqI4UXPQo)
 
 ## Features
 
