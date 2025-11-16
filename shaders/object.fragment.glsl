@@ -30,6 +30,19 @@ struct PointLight {
 #define NR_POINT_LIGHTS 4
 uniform PointLight pointLights[NR_POINT_LIGHTS];
 
+struct SpotLight {
+    vec3 spotDir;
+
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+
+    float phi;
+    float phiOuter;
+};
+
+uniform SpotLight spotLight;
+
 uniform vec3 viewPos;
 
 in vec2 TexCoords;
@@ -40,6 +53,7 @@ out vec4 FragColor;
 
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir);
 vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
+vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
 
 void main()
 {
@@ -53,7 +67,7 @@ void main()
     for (int i = 0; i < NR_POINT_LIGHTS; i++)
         result += CalcPointLight(pointLights[i], norm, FragPos, viewDir);
     // phase 3: Spot light
-    //result += CalcSpotLight(spotLight, norm, FragPos, viewDir);
+    result += CalcSpotLight(spotLight, norm, FragPos, viewDir);
 
     FragColor = vec4(result, 1.0);
 }
@@ -92,5 +106,36 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
     ambient *= attenuation;
     diffuse *= attenuation;
     specular *= attenuation;
+    return (ambient + diffuse + specular);
+}
+
+vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
+{
+    float theta = dot(viewDir, normalize(-light.spotDir));
+
+    vec3 ambient = vec3(0.0);
+    vec3 diffuse = vec3(0.0);
+    vec3 specular = vec3(0.0);
+
+    if (theta > light.phiOuter) {
+        // diffuse shading
+        float diff = max(dot(normal, viewDir), 0.0);
+        // specular shading
+        vec3 reflectDir = reflect(-viewDir, normal);
+        float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
+        // combine results
+        ambient = light.ambient * vec3(texture(material.diffuse, TexCoords));
+        diffuse = light.diffuse * diff * vec3(texture(material.diffuse, TexCoords));
+        specular = light.specular * spec * vec3(texture(material.specular, TexCoords));
+
+        // Scale for smoothing
+        float epsilon = light.phi - light.phiOuter;
+        float intensity = clamp((theta - light.phiOuter) / epsilon, 0.0, 1.0);
+
+        ambient *= intensity;
+        diffuse *= intensity;
+        specular *= intensity;
+    }
+
     return (ambient + diffuse + specular);
 }

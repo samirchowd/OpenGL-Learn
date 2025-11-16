@@ -241,6 +241,14 @@ int main() {
   objectShader.setVec3("dirLight.diffuse", 0.075f, 0.075f, 0.075f);
   objectShader.setVec3("dirLight.specular", 0.1f, 0.1f, 0.1f);
 
+  // Setup spot light
+  objectShader.setVec3("spotLight.spotDir", camera.Front);
+  objectShader.setFloat("spotLight.phi", glm::cos(glm::radians(12.5f)));
+  objectShader.setFloat("spotLight.phiOuter", glm::cos(glm::radians(25.0f)));
+  objectShader.setVec3("spotLight.ambient", 0.05f, 0.05f, 0.05f);
+  objectShader.setVec3("spotLight.diffuse", 1.0f, 1.0f, 1.0f);
+  objectShader.setVec3("spotLight.specular", 0.1f, 0.1f, 0.1f);
+
   while (!glfwWindowShouldClose(window)) {
     float currentFrame = (float)glfwGetTime();
     deltaTime = currentFrame - lastFrame;
@@ -249,8 +257,6 @@ int main() {
     processInput(window, objectShader, camera, deltaTime);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glm::vec3 lightPos = lightStart;
 
     // 1. Render the objects (multiple cubes)
     objectShader.use();
@@ -268,6 +274,9 @@ int main() {
 
     // Set directional light (like sunlight coming from above-right)
     objectShader.setVec3("viewPos", camera.Position.x, camera.Position.y, camera.Position.z);
+
+    // Update spotlight
+    objectShader.setVec3("spotLight.spotDir", camera.Front);
 
     // Render multiple cubes
     for (unsigned int i = 0; i < 10; i++) {
