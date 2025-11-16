@@ -11,6 +11,16 @@ find_package(OpenGL REQUIRED)
 find_package(glfw3 REQUIRED)
 find_package(glm REQUIRED)
 
+# Configure Assimp build options (before add_subdirectory)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)              # Build static library
+set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)            # Don't build tests
+set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "" FORCE)     # Don't build tools
+set(ASSIMP_INSTALL OFF CACHE BOOL "" FORCE)                # Don't install (submodule)
+set(ASSIMP_WARNINGS_AS_ERRORS OFF CACHE BOOL "" FORCE)     # Avoid build errors from warnings
+
+# Add Assimp subdirectory
+add_subdirectory(external/assimp)
+
 # Source files
 set(SOURCES
     src/main.cpp
@@ -30,6 +40,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/external/glad/include
     ${CMAKE_CURRENT_SOURCE_DIR}/external/stb
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/assimp/include
 )
 
 # Link libraries
@@ -37,6 +48,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     OpenGL::GL
     glfw
     glm::glm
+    assimp
 )
 
 # Compiler warnings

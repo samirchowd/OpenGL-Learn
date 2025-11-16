@@ -6,14 +6,12 @@
 #include "glm/fwd.hpp"
 #include <GLFW/glfw3.h>
 #include <format>
-#include <fstream>
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 #include <map>
-#include <sstream>
 #include <string>
 #include <vector>
 
@@ -39,17 +37,10 @@ const unsigned int SCR_WIDTH = 1920;
 const unsigned int SCR_HEIGHT = 1080;
 float lastX = SCR_WIDTH / 2.0f, lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
-
-// Global blend factor
-float blendFactor = 0.2f;
+bool spotlight = false;
 
 // Camera
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
-
-// Materials
-std::map<std::string, Material> materials;
-std::vector<std::string> materialNames;
-int currentMaterialIndex = 0;
 
 // Light animation toggle
 bool animateLight = false;
@@ -109,17 +100,6 @@ int main() {
   }
 
   glEnable(GL_DEPTH_TEST);
-
-  // Load materials from JSON - DISABLED for texture work
-  // materials = loadMaterials("materials.json");
-  // for (const auto &pair : materials) {
-  //   materialNames.push_back(pair.first);
-  // }
-  // if (materialNames.empty()) {
-  //   std::cout << "No materials loaded, using default gold material" << std::endl;
-  // } else {
-  //   std::cout << "Loaded " << materialNames.size() << " materials" << std::endl;
-  // }
 
   float vertices[] = {
       // positions          // normals           // texture coords
@@ -196,8 +176,6 @@ int main() {
   objectShader.use();
   objectShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
 
-  std::cout << "Material system disabled - using texture-based materials" << std::endl;
-
   // Load container texture
   Texture diffuseMap("textures/container2.png");
   Texture specularMap("textures/container2_specular.png");
@@ -214,7 +192,6 @@ int main() {
 
   float deltaTime = 0.0f;
   float lastFrame = 0.0f;
-  glm::vec3 lightStart(1.2f, 1.0f, 2.0f);
 
   GLuint objectModelLoc = glGetUniformLocation(objectShader.getID(), "model");
   GLuint objectViewLoc = glGetUniformLocation(objectShader.getID(), "view");
@@ -248,6 +225,7 @@ int main() {
   objectShader.setVec3("spotLight.ambient", 0.05f, 0.05f, 0.05f);
   objectShader.setVec3("spotLight.diffuse", 1.0f, 1.0f, 1.0f);
   objectShader.setVec3("spotLight.specular", 0.1f, 0.1f, 0.1f);
+  objectShader.setBool("spotLight.enabled", spotlight);
 
   while (!glfwWindowShouldClose(window)) {
     float currentFrame = (float)glfwGetTime();
@@ -277,6 +255,7 @@ int main() {
 
     // Update spotlight
     objectShader.setVec3("spotLight.spotDir", camera.Front);
+    objectShader.setBool("spotLight.enabled", spotlight);
 
     // Render multiple cubes
     for (unsigned int i = 0; i < 10; i++) {
@@ -313,9 +292,6 @@ int main() {
 
 void processInput(GLFWwindow *window, Shader &shader, Camera &camera,
                   float deltaTime) {
-  static bool mKeyPressed = false;
-  static bool nKeyPressed = false;
-  static bool lKeyPressed = false;
 
   if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
     glfwSetWindowShouldClose(window, true);
@@ -330,47 +306,14 @@ void processInput(GLFWwindow *window, Shader &shader, Camera &camera,
   if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
     camera.ProcessKeyboard(RIGHT, deltaTime);
 
-  // Material cycling with M/N keys - DISABLED
-  // if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS && !mKeyPressed && !materialNames.empty()) {
-  //   mKeyPressed = true;
-  //   currentMaterialIndex = (currentMaterialIndex + 1) % materialNames.size();
-  //   setMaterial(shader, materials[materialNames[currentMaterialIndex]]);
-  //   std::cout << "Material: " << materialNames[currentMaterialIndex] << std::endl;
-  // }
-  // if (glfwGetKey(window, GLFW_KEY_M) == GLFW_RELEASE) {
-  //   mKeyPressed = false;
-  // }
-  //
-  // if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS && !nKeyPressed && !materialNames.empty()) {
-  //   nKeyPressed = true;
-  //   currentMaterialIndex = (currentMaterialIndex - 1 + materialNames.size()) % materialNames.size();
-  //   setMaterial(shader, materials[materialNames[currentMaterialIndex]]);
-  //   std::cout << "Material: " << materialNames[currentMaterialIndex] << std::endl;
-  // }
-  // if (glfwGetKey(window, GLFW_KEY_N) == GLFW_RELEASE) {
-  //   nKeyPressed = false;
-  // }
-
-  // Light animation toggle with L key
-  if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS && !lKeyPressed) {
-    lKeyPressed = true;
-    animateLight = !animateLight;
-    std::cout << "Light animation: " << (animateLight ? "ON" : "OFF") << std::endl;
+  // Spotlight toggle with F key
+  static bool fKeyPressed = false;
+  if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS && !fKeyPressed) {
+    fKeyPressed = true;
+    spotlight = !spotlight;
   }
-  if (glfwGetKey(window, GLFW_KEY_L) == GLFW_RELEASE) {
-    lKeyPressed = false;
-  }
-
-  // UP key - increase blend factor
-  if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
-    blendFactor = std::min(1.0f, blendFactor + 0.005f);
-    shader.setFloat("blendFactor", blendFactor);
-  }
-
-  // DOWN key - decrease blend factor
-  if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-    blendFactor = std::max(0.0f, blendFactor - 0.005f);
-    shader.setFloat("blendFactor", blendFactor);
+  if (glfwGetKey(window, GLFW_KEY_F) == GLFW_RELEASE) {
+    fKeyPressed = false;
   }
 }
 
@@ -399,94 +342,4 @@ void framebuffer_size_callback(GLFWwindow *, int width, int height) {
   // make sure the viewport matches the new window dimensions; note that width
   // and height will be significantly larger than specified on retina displays.
   glViewport(0, 0, width, height);
-}
-
-// Simple JSON parser for materials
-std::map<std::string, Material> loadMaterials(const std::string &filename) {
-  std::map<std::string, Material> loadedMaterials;
-  std::ifstream file(filename);
-  if (!file.is_open()) {
-    std::cerr << "Could not open materials file: " << filename << std::endl;
-    return loadedMaterials;
-  }
-
-  std::string line;
-  std::string currentMaterial;
-  Material material;
-
-  while (std::getline(file, line)) {
-    // Simple parsing - look for material names (strings ending with ": {")
-    if (line.find("\": {") != std::string::npos) {
-      size_t start = line.find("\"") + 1;
-      size_t end = line.find("\"", start);
-      currentMaterial = line.substr(start, end - start);
-    }
-    // Parse ambient values
-    else if (line.find("\"ambient\":") != std::string::npos) {
-      size_t start = line.find("[") + 1;
-      size_t end = line.find("]");
-      std::string values = line.substr(start, end - start);
-      std::stringstream ss(values);
-      std::string value;
-      int i = 0;
-      while (std::getline(ss, value, ',') && i < 3) {
-        material.ambient[i] = std::stof(value);
-        i++;
-      }
-    }
-    // Parse diffuse values
-    else if (line.find("\"diffuse\":") != std::string::npos) {
-      size_t start = line.find("[") + 1;
-      size_t end = line.find("]");
-      std::string values = line.substr(start, end - start);
-      std::stringstream ss(values);
-      std::string value;
-      int i = 0;
-      while (std::getline(ss, value, ',') && i < 3) {
-        material.diffuse[i] = std::stof(value);
-        i++;
-      }
-    }
-    // Parse specular values
-    else if (line.find("\"specular\":") != std::string::npos) {
-      size_t start = line.find("[") + 1;
-      size_t end = line.find("]");
-      std::string values = line.substr(start, end - start);
-      std::stringstream ss(values);
-      std::string value;
-      int i = 0;
-      while (std::getline(ss, value, ',') && i < 3) {
-        material.specular[i] = std::stof(value);
-        i++;
-      }
-    }
-    // Parse shininess
-    else if (line.find("\"shininess\":") != std::string::npos) {
-      size_t start = line.find(":") + 1;
-      std::string value = line.substr(start);
-      // Remove whitespace and trailing characters
-      value.erase(0, value.find_first_not_of(" \t"));
-      value.erase(value.find_last_not_of(" \t\n\r,") + 1);
-      material.shininess = std::stof(value);
-
-      // Material is complete, add it to the map
-      if (!currentMaterial.empty()) {
-        loadedMaterials[currentMaterial] = material;
-      }
-    }
-  }
-
-  return loadedMaterials;
-}
-
-void setMaterial(Shader &shader, const Material &material) {
-  shader.use();
-  shader.setVec3("material.ambient", material.ambient);
-  shader.setVec3("material.diffuse", material.diffuse);
-  shader.setVec3("material.specular", material.specular);
-  shader.setFloat("material.shininess", material.shininess * 128.0f);
-  std::cout << "Ambient: " << material.ambient.x << ", " << material.ambient.y << ", " << material.ambient.z << std::endl;
-  std::cout << "Diffuse: " << material.diffuse.x << ", " << material.diffuse.y << ", " << material.diffuse.z << std::endl;
-  std::cout << "Specular: " << material.specular.x << ", " << material.specular.y << ", " << material.specular.z << std::endl;
-  std::cout << "Shininess: " << material.shininess << ", " << material.shininess * 128.0f << std::endl;
 }

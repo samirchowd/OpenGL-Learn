@@ -39,6 +39,8 @@ struct SpotLight {
 
     float phi;
     float phiOuter;
+
+    bool enabled;
 };
 
 uniform SpotLight spotLight;
@@ -66,8 +68,11 @@ void main()
     // phase 2: Point lights
     for (int i = 0; i < NR_POINT_LIGHTS; i++)
         result += CalcPointLight(pointLights[i], norm, FragPos, viewDir);
+
     // phase 3: Spot light
-    result += CalcSpotLight(spotLight, norm, FragPos, viewDir);
+    if (spotLight.enabled == true) {
+        result += CalcSpotLight(spotLight, norm, FragPos, viewDir);
+    }
 
     FragColor = vec4(result, 1.0);
 }
