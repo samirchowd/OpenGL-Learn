@@ -22,6 +22,7 @@ set(SOURCES
     src/VertexBuffer.cpp
     src/ElementBuffer.cpp
     src/Mesh.cpp
+    src/Model.cpp
     external/glad/src/glad.c
 )
 
@@ -51,7 +52,7 @@ else()
 endif()
 
 # Copy resources to build directory
-set(RESOURCE_DIRS shaders textures)
+set(RESOURCE_DIRS shaders textures models)
 foreach(dir ${RESOURCE_DIRS})
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory

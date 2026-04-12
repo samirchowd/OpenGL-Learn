@@ -9,6 +9,9 @@ private:
     int width, height, channels;
 
 public:
+    std::string type;
+    std::string path;
+
     Texture(const std::string& imagePath, GLenum format = GL_RGB);
     ~Texture();
     
