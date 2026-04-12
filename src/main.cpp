@@ -13,7 +13,6 @@
 #include <iostream>
 #include <map>
 #include <string>
-#include <vector>
 
 struct Material {
   glm::vec3 ambient;

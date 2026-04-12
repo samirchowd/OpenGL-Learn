@@ -21,6 +21,7 @@ set(SOURCES
     src/Texture.cpp
     src/VertexBuffer.cpp
     src/ElementBuffer.cpp
+    src/Mesh.cpp
     external/glad/src/glad.c
 )
 
