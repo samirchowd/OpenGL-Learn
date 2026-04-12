@@ -24,6 +24,7 @@ A modern C++20 OpenGL learning project demonstrating 3D graphics rendering techn
 - Dependencies:
   - GLFW3 (window management)
   - GLM (mathematics)
+  - Assimp (3D model loading)
   - GLAD (OpenGL function loader, included in `external/`)
   - stb_image (texture loading, included in `external/`)
 
@@ -31,24 +32,24 @@ A modern C++20 OpenGL learning project demonstrating 3D graphics rendering techn
 
 **macOS (Homebrew):**
 ```sh
-brew install glfw glm cmake
+brew install glfw glm assimp cmake
 ```
 
 **Linux (Ubuntu/Debian):**
 ```sh
-sudo apt install libglfw3-dev libglm-dev cmake
+sudo apt install libglfw3-dev libglm-dev libassimp-dev cmake
 ```
 
 **Linux (Fedora):**
 ```sh
-sudo dnf install glfw-devel glm-devel cmake
+sudo dnf install glfw-devel glm-devel assimp-devel cmake
 ```
 
 **Windows:**
 - Install [CMake](https://cmake.org/download/)
 - Use [vcpkg](https://vcpkg.io/):
   ```sh
-  vcpkg install glfw3 glm
+  vcpkg install glfw3 glm assimp
   ```
 
 ## Building
@@ -89,7 +90,7 @@ The executable will be in `build/` along with copied shaders, textures, and mate
 include/          - Header files (Camera, Shader, Texture, buffers)
 src/              - Implementation files
   main.cpp        - Main application and render loop
-external/         - Third-party dependencies
+external/         - Third-party dependencies (header-only)
   glad/           - OpenGL function loader
   stb/            - stb_image header-only library
 shaders/          - GLSL vertex and fragment shaders
