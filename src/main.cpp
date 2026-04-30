@@ -1,4 +1,5 @@
 #include "Camera.h"
+#include "Light.h"
 #include "Model.h"
 #include "Shader.h"
 #include <GLFW/glfw3.h>
@@ -7,7 +8,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
-#include <format>
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
@@ -23,11 +23,23 @@ float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
 bool spotlight = false;
 
-glm::vec3 pointLightPositions[] = {
-    glm::vec3( 0.7f,  0.2f,  2.0f),
-    glm::vec3( 2.3f, -3.3f, -4.0f),
-    glm::vec3(-4.0f,  2.0f, -12.0f),
-    glm::vec3( 0.0f,  0.0f, -3.0f)
+PointLight pointLights[] = {
+    { glm::vec3( 0.7f,  0.2f,  2.0f), glm::vec3(0.05f), glm::vec3(0.8f), glm::vec3(1.0f), 1.0f, 0.09f, 0.032f },
+    { glm::vec3( 2.3f, -3.3f, -4.0f), glm::vec3(0.05f), glm::vec3(0.8f), glm::vec3(1.0f), 1.0f, 0.09f, 0.032f },
+    { glm::vec3(-4.0f,  2.0f,-12.0f), glm::vec3(0.05f), glm::vec3(0.8f), glm::vec3(1.0f), 1.0f, 0.09f, 0.032f },
+    { glm::vec3( 0.0f,  0.0f, -3.0f), glm::vec3(0.05f), glm::vec3(0.8f), glm::vec3(1.0f), 1.0f, 0.09f, 0.032f },
+};
+
+DirLight dirLight = {
+    glm::vec3(-0.2f, -1.0f, -0.3f),
+    glm::vec3(0.05f), glm::vec3(0.4f), glm::vec3(0.5f)
+};
+
+SpotLight spotLight = {
+    glm::vec3(0.0f), glm::vec3(0.0f),
+    glm::vec3(0.0f), glm::vec3(1.0f), glm::vec3(1.0f),
+    glm::cos(glm::radians(12.5f)), glm::cos(glm::radians(25.0f)),
+    false
 };
 
 int main() {
@@ -89,34 +101,11 @@ int main() {
   glBindVertexArray(0);
 
   shader.use();
-
-  // material
   shader.setFloat("shininess", 32.0f);
-
-  // directional light
-  shader.setVec3("dirLight.direction", -0.2f, -1.0f, -0.3f);
-  shader.setVec3("dirLight.ambient",    0.05f, 0.05f, 0.05f);
-  shader.setVec3("dirLight.diffuse",    0.4f,  0.4f,  0.4f);
-  shader.setVec3("dirLight.specular",   0.5f,  0.5f,  0.5f);
-
-  // point lights
-  for (int i = 0; i < 4; i++) {
-    shader.setVec3(std::format("pointLights[{}].position",  i), pointLightPositions[i]);
-    shader.setVec3(std::format("pointLights[{}].ambient",   i), 0.05f, 0.05f, 0.05f);
-    shader.setVec3(std::format("pointLights[{}].diffuse",   i), 0.8f,  0.8f,  0.8f);
-    shader.setVec3(std::format("pointLights[{}].specular",  i), 1.0f,  1.0f,  1.0f);
-    shader.setFloat(std::format("pointLights[{}].constant",  i), 1.0f);
-    shader.setFloat(std::format("pointLights[{}].linear",    i), 0.09f);
-    shader.setFloat(std::format("pointLights[{}].quadratic", i), 0.032f);
-  }
-
-  // spotlight
-  shader.setFloat("spotLight.phi",      glm::cos(glm::radians(12.5f)));
-  shader.setFloat("spotLight.phiOuter", glm::cos(glm::radians(25.0f)));
-  shader.setVec3("spotLight.ambient",   0.0f, 0.0f, 0.0f);
-  shader.setVec3("spotLight.diffuse",   1.0f, 1.0f, 1.0f);
-  shader.setVec3("spotLight.specular",  1.0f, 1.0f, 1.0f);
-  shader.setBool("spotLight.enabled",   spotlight);
+  setDirLight(shader, dirLight);
+  for (int i = 0; i < 4; i++)
+      setPointLight(shader, i, pointLights[i]);
+  setSpotLight(shader, spotLight);
 
   float deltaTime = 0.0f;
   float lastFrame = 0.0f;
@@ -135,9 +124,11 @@ int main() {
 
     shader.setVec3("viewPos", camera.Position);
 
-    // update spotlight direction and toggle
-    shader.setVec3("spotLight.spotDir", camera.Front);
-    shader.setBool("spotLight.enabled", spotlight);
+    // update spotlight from camera each frame
+    spotLight.position  = camera.Position;
+    spotLight.direction = camera.Front;
+    spotLight.enabled   = spotlight;
+    setSpotLight(shader, spotLight);
 
     glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom),
                                             (float)SCR_WIDTH / (float)SCR_HEIGHT,
@@ -160,7 +151,7 @@ int main() {
     glBindVertexArray(lightVAO);
     for (unsigned int i = 0; i < 4; i++) {
       glm::mat4 lightMat = glm::mat4(1.0f);
-      lightMat = glm::translate(lightMat, pointLightPositions[i]);
+      lightMat = glm::translate(lightMat, pointLights[i].position);
       lightMat = glm::scale(lightMat, glm::vec3(0.2f));
       lightShader.setMat4("model", lightMat);
       glDrawArrays(GL_TRIANGLES, 0, 36);

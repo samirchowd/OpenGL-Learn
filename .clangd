@@ -1,0 +1,11 @@
+CompileFlags:
+  Add:
+    - --sysroot=/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk
+
+InlayHints:
+  Enabled: true
+
+Style:
+  IndentWidth: 4
+  TabWidth: 4
+  UseTab: Never

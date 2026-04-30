@@ -23,6 +23,7 @@ set(SOURCES
     src/ElementBuffer.cpp
     src/Mesh.cpp
     src/Model.cpp
+    src/Light.cpp
     external/glad/src/glad.c
 )
 
