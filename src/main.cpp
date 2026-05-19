@@ -68,7 +68,7 @@ int main() {
     glEnable(GL_DEPTH_TEST);
 
     Shader shader("shaders/lit.vert.glsl", "shaders/phong.frag.glsl");
-    Model model("models/sponza/sponza.obj");
+    Model model("models/backpack/backpack.obj");
 
     Skybox skybox("textures/skybox/default/", "jpg");
 
