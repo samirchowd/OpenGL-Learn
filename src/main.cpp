@@ -1,7 +1,7 @@
 #include "Camera.h"
-#include "Light.h"
 #include "Model.h"
 #include "Shader.h"
+#include "Skybox.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -19,30 +19,14 @@ void processInput(GLFWwindow *window, float deltaTime);
 
 const unsigned int SCR_WIDTH = 1920;
 const unsigned int SCR_HEIGHT = 1080;
+const float NEAR_PLANE = 0.1f;
+const float FAR_PLANE = 1000.0f;
 
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(glm::vec3(0.0f, 2.0f, 0.0f));
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
-bool spotlight = false;
 bool cursorCaptured = false;
-
-PointLight pointLights[] = {
-    {glm::vec3(0.7f, 0.2f, 2.0f), glm::vec3(0.05f), glm::vec3(0.8f), glm::vec3(1.0f), 1.0f, 0.09f, 0.032f},
-    {glm::vec3(2.3f, -3.3f, -4.0f), glm::vec3(0.05f), glm::vec3(0.8f), glm::vec3(1.0f), 1.0f, 0.09f, 0.032f},
-    {glm::vec3(-4.0f, 2.0f, -12.0f), glm::vec3(0.05f), glm::vec3(0.8f), glm::vec3(1.0f), 1.0f, 0.09f, 0.032f},
-    {glm::vec3(0.0f, 0.0f, -3.0f), glm::vec3(0.05f), glm::vec3(0.8f), glm::vec3(1.0f), 1.0f, 0.09f, 0.032f},
-};
-
-DirLight dirLight = {
-    glm::vec3(-0.2f, -1.0f, -0.3f),
-    glm::vec3(0.05f), glm::vec3(0.4f), glm::vec3(0.5f)};
-
-SpotLight spotLight = {
-    glm::vec3(0.0f), glm::vec3(0.0f),
-    glm::vec3(0.0f), glm::vec3(1.0f), glm::vec3(1.0f),
-    glm::cos(glm::radians(12.5f)), glm::cos(glm::radians(25.0f)),
-    false};
 
 int main() {
     glfwInit();
@@ -75,146 +59,18 @@ int main() {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO &io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;  // Enable Gamepad Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 
-    // Setup Platform/Renderer backends
-    ImGui_ImplGlfw_InitForOpenGL(window, true); // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init();
 
     glEnable(GL_DEPTH_TEST);
 
-    Shader shader("shaders/model.lit.vertex.glsl", "shaders/model.lit.fragment.glsl");
-    Shader lightShader("shaders/vertex.glsl", "shaders/light.fragment.glsl");
-    Model model("models/backpack/backpack.obj");
+    Shader shader("shaders/lit.vert.glsl", "shaders/phong.frag.glsl");
+    Model model("models/sponza/sponza.obj");
 
-    float cubeVertices[] = {
-        -0.5f,
-        -0.5f,
-        -0.5f,
-        0.5f,
-        -0.5f,
-        -0.5f,
-        0.5f,
-        0.5f,
-        -0.5f,
-        0.5f,
-        0.5f,
-        -0.5f,
-        -0.5f,
-        0.5f,
-        -0.5f,
-        -0.5f,
-        -0.5f,
-        -0.5f,
-        -0.5f,
-        -0.5f,
-        0.5f,
-        0.5f,
-        -0.5f,
-        0.5f,
-        0.5f,
-        0.5f,
-        0.5f,
-        0.5f,
-        0.5f,
-        0.5f,
-        -0.5f,
-        0.5f,
-        0.5f,
-        -0.5f,
-        -0.5f,
-        0.5f,
-        -0.5f,
-        0.5f,
-        0.5f,
-        -0.5f,
-        0.5f,
-        -0.5f,
-        -0.5f,
-        -0.5f,
-        -0.5f,
-        -0.5f,
-        -0.5f,
-        -0.5f,
-        -0.5f,
-        -0.5f,
-        0.5f,
-        -0.5f,
-        0.5f,
-        0.5f,
-        0.5f,
-        0.5f,
-        0.5f,
-        0.5f,
-        0.5f,
-        -0.5f,
-        0.5f,
-        -0.5f,
-        -0.5f,
-        0.5f,
-        -0.5f,
-        -0.5f,
-        0.5f,
-        -0.5f,
-        0.5f,
-        0.5f,
-        0.5f,
-        0.5f,
-        -0.5f,
-        -0.5f,
-        -0.5f,
-        0.5f,
-        -0.5f,
-        -0.5f,
-        0.5f,
-        -0.5f,
-        0.5f,
-        0.5f,
-        -0.5f,
-        0.5f,
-        -0.5f,
-        -0.5f,
-        0.5f,
-        -0.5f,
-        -0.5f,
-        -0.5f,
-        -0.5f,
-        0.5f,
-        -0.5f,
-        0.5f,
-        0.5f,
-        -0.5f,
-        0.5f,
-        0.5f,
-        0.5f,
-        0.5f,
-        0.5f,
-        0.5f,
-        -0.5f,
-        0.5f,
-        0.5f,
-        -0.5f,
-        0.5f,
-        -0.5f,
-    };
-
-    unsigned int lightVAO, lightVBO;
-    glGenVertexArrays(1, &lightVAO);
-    glGenBuffers(1, &lightVBO);
-    glBindVertexArray(lightVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, lightVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), cubeVertices, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
-    glEnableVertexAttribArray(0);
-    glBindVertexArray(0);
-
-    shader.use();
-    shader.setFloat("shininess", 32.0f);
-    setDirLight(shader, dirLight);
-    for (int i = 0; i < 4; i++)
-        setPointLight(shader, i, pointLights[i]);
-    setSpotLight(shader, spotLight);
+    Skybox skybox("textures/skybox/default/", "jpg");
 
     float deltaTime = 0.0f;
     float lastFrame = 0.0f;
@@ -240,41 +96,25 @@ int main() {
 
         shader.use();
 
-        shader.setVec3("viewPos", camera.Position);
-
-        // update spotlight from camera each frame
-        spotLight.position = camera.Position;
-        spotLight.direction = camera.Front;
-        spotLight.enabled = spotlight;
-        setSpotLight(shader, spotLight);
-
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom),
                                                 (float)SCR_WIDTH / (float)SCR_HEIGHT,
-                                                0.1f, 100.0f);
+                                                NEAR_PLANE, FAR_PLANE);
         glm::mat4 view = camera.GetViewMatrix();
         shader.setMat4("projection", projection);
         shader.setMat4("view", view);
 
         glm::mat4 modelMat = glm::mat4(1.0f);
-        modelMat = glm::translate(modelMat, glm::vec3(0.0f, 0.0f, 0.0f));
-        modelMat = glm::scale(modelMat, glm::vec3(1.0f, 1.0f, 1.0f));
         shader.setMat4("model", modelMat);
+
+        shader.setVec3("viewPos", camera.Position);
+
+        glActiveTexture(GL_TEXTURE10);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.getCubemapTexture());
+        shader.setInt("skybox", 10);
 
         model.Draw(shader);
 
-        // render light cubes
-        lightShader.use();
-        lightShader.setMat4("view", view);
-        lightShader.setMat4("projection", projection);
-        glBindVertexArray(lightVAO);
-        for (unsigned int i = 0; i < 4; i++) {
-            glm::mat4 lightMat = glm::mat4(1.0f);
-            lightMat = glm::translate(lightMat, pointLights[i].position);
-            lightMat = glm::scale(lightMat, glm::vec3(0.2f));
-            lightShader.setMat4("model", lightMat);
-            glDrawArrays(GL_TRIANGLES, 0, 36);
-        }
-        glBindVertexArray(0);
+        skybox.Draw(camera.GetViewMatrix(), projection);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -295,21 +135,13 @@ void processInput(GLFWwindow *window, float deltaTime) {
         glfwSetWindowShouldClose(window, true);
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera.ProcessKeyboard(FORWARD, deltaTime);
+        camera.ProcessKeyboard(FORWARD, 2 * deltaTime);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera.ProcessKeyboard(BACKWARD, deltaTime);
+        camera.ProcessKeyboard(BACKWARD, 2 * deltaTime);
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camera.ProcessKeyboard(LEFT, deltaTime);
+        camera.ProcessKeyboard(LEFT, 2 * deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camera.ProcessKeyboard(RIGHT, deltaTime);
-
-    static bool fKeyPressed = false;
-    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS && !fKeyPressed) {
-        fKeyPressed = true;
-        spotlight = !spotlight;
-    }
-    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_RELEASE)
-        fKeyPressed = false;
+        camera.ProcessKeyboard(RIGHT, 2 * deltaTime);
 
     static bool tabKeyPressed = false;
     if (glfwGetKey(window, GLFW_KEY_TAB) == GLFW_PRESS && !tabKeyPressed) {

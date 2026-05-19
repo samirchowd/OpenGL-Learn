@@ -42,6 +42,7 @@ set(SOURCES
     src/Mesh.cpp
     src/Model.cpp
     src/Light.cpp
+    src/Skybox.cpp
     external/glad/src/glad.c
     ${IMGUI_SOURCES}
 )

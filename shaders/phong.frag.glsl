@@ -43,20 +43,19 @@ in vec3 FragPos;
 
 out vec4 FragColor;
 
+uniform samplerCube skybox;
+
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir);
 vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
 vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
+vec3 CalcSkyboxLight(vec3 normal, vec3 viewDir);
 
 void main()
 {
     vec3 norm = normalize(Normal);
     vec3 viewDir = normalize(viewPos - FragPos);
 
-    vec3 result = CalcDirLight(dirLight, norm, viewDir);
-    for (int i = 0; i < NR_POINT_LIGHTS; i++)
-        result += CalcPointLight(pointLights[i], norm, FragPos, viewDir);
-    if (spotLight.enabled)
-        result += CalcSpotLight(spotLight, norm, FragPos, viewDir);
+    vec3 result = CalcSkyboxLight(norm, viewDir);
 
     FragColor = vec4(result, 1.0);
 }
@@ -114,4 +113,9 @@ vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
     }
 
     return (ambient + diffuse + specular);
+}
+
+vec3 CalcSkyboxLight(vec3 normal, vec3 viewDir) {
+    vec3 R = reflect(-viewDir, normalize(normal));
+    return vec3(texture(skybox, R).rgb);
 }
